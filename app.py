@@ -36,10 +36,13 @@ def create_app():
 
     with app.app_context():
         db.create_all()
-        db.session.execute(db.text(
-            "ALTER TABLE semantic_list ADD COLUMN IF NOT EXISTS session_id VARCHAR(100);"
-        ))
-        db.session.commit()
+        try:
+            db.session.execute(db.text(
+                "ALTER TABLE semantic_list ADD COLUMN session_id VARCHAR(100);"
+            ))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
     return app
 
