@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% block title %}Inicio — Lexi-Koh{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<section class="lk-hero">
+  <div class="container">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-6">
+        <p class="text-uppercase fw-semibold small mb-2" style="color:#9B7DD4;letter-spacing:.08em;">
+          Vocabulario en inglés
+        </p>
+        <h1 class="lk-hero-title mb-3">
+          Aprende inglés<br>
+          <span class="lk-gradient-text">jugando</span>
+        </h1>
+        <p class="lead text-muted mb-4" style="max-width:420px;">
+          Crea tus listas de vocabulario por campos semánticos y practica con quizzes A/B/C/D.
+        </p>
+        <div class="d-flex gap-3 flex-wrap">
+          {% if user_lists %}
+          <button class="btn lk-btn-play" data-bs-toggle="modal" data-bs-target="#playModal">
+            Jugar ahora
+          </button>
+          {% else %}
+          <a href="{{ url_for('lists.create_list') }}" class="btn lk-btn-play">
+            Crear mi primera lista
+          </a>
+          {% endif %}
+          <a href="#sugeridas" class="btn lk-btn-ghost">
+            Ver listas sugeridas
+          </a>
+        </div>
+      </div>
+      <div class="col-lg-6 text-center">
+        <div class="lk-hero-visual">
+          <div class="lk-hero-card lk-hero-card--1">cook → <strong>cocinar</strong></div>
+          <div class="lk-hero-card lk-hero-card--2">happy → <strong>feliz</strong></div>
+          <div class="lk-hero-card lk-hero-card--3">forest → <strong>bosque</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="container py-5">
+
+  <!-- Mis Listas -->
+  <section class="mb-5">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <h2 class="lk-section-title mb-0">Mis listas</h2>
+      <a href="{{ url_for('lists.create_list') }}" class="btn lk-btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i>Nueva lista
+      </a>
+    </div>
+
+    {% if user_lists %}
+    <div class="row g-3">
+      {% for lst in user_lists %}
+      <div class="col-md-6 col-lg-4">
+        <div class="lk-card p-4 h-100 d-flex flex-column">
+
+          <!-- Mastered badge -->
+          {% if lst.is_fully_mastered %}
+          <div class="mb-2">
+            <span class="badge-mastered lk-celebrate">&#10003; Dominada</span>
+          </div>
+          {% endif %}
+
+          <h5 class="fw-bold mb-1">{{ lst.name }}</h5>
+          {% if lst.description %}
+          <p class="text-muted small mb-2">{{ lst.description }}</p>
+          {% endif %}
+          <p class="text-muted small mb-3">
+            <i class="bi bi-collection me-1"></i>{{ lst.word_count }} palabras
+          </p>
+
+          <!-- Progress bar -->
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <small class="text-muted">Progreso</small>
+            <small class="text-muted fw-semibold">{{ lst.mastered_count }}/{{ lst.word_count }}</small>
+          </div>
+          <div class="lk-progress mb-3">
+            <div class="lk-progress-bar" style="width:{{ lst.progress_percentage }}%"></div>
+          </div>
+
+          <div class="d-flex gap-2 mt-auto flex-wrap">
+            {% if lst.word_count >= 2 %}
+            <a href="{{ url_for('quiz.quiz', list_id=lst.id) }}"
+               class="btn lk-btn-primary btn-sm flex-fill">
+              <i class="bi bi-play-fill me-1"></i>Practicar
+            </a>
+            {% endif %}
+            <a href="{{ url_for('lists.detail', list_id=lst.id) }}"
+               class="btn lk-btn-sky btn-sm flex-fill">
+              <i class="bi bi-pencil me-1"></i>Editar
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="lk-empty-state text-center py-5">
+      <div class="lk-empty-icon mb-3">&#128196;</div>
+      <h5 class="text-muted">Aún no tienes listas propias</h5>
+      <p class="text-muted small mb-4">Crea una lista o copia una de las sugeridas para empezar a practicar.</p>
+      <a href="{{ url_for('lists.create_list') }}" class="btn lk-btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Crear lista
+      </a>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- Listas Sugeridas -->
+  {% if suggested_lists %}
+  <section id="sugeridas">
+    <div class="mb-4">
+      <h2 class="lk-section-title mb-1">Listas sugeridas</h2>
+      <p class="text-muted small">Copia cualquier lista a tus listas personales para editarla y practicar.</p>
+    </div>
+    <div class="row g-3">
+      {% for lst in suggested_lists %}
+      <div class="col-md-6 col-lg-4">
+        <div class="lk-suggested-card h-100 d-flex flex-column">
+          <div class="d-flex align-items-start justify-content-between mb-2">
+            <h6 class="fw-bold mb-0">{{ lst.name }}</h6>
+            <span class="badge rounded-pill lk-badge-count">{{ lst.word_count }}</span>
+          </div>
+          {% if lst.description %}
+          <p class="text-muted small mb-3">{{ lst.description }}</p>
+          {% endif %}
+
+          <!-- Word preview chips -->
+          <div class="mb-3 flex-grow-1">
+            {% for word in lst.words[:6] %}
+            <span class="lk-chip me-1 mb-1">{{ word.english }}</span>
+            {% endfor %}
+            {% if lst.word_count > 6 %}
+            <span class="text-muted small">+{{ lst.word_count - 6 }} más</span>
+            {% endif %}
+          </div>
+
+          <form action="{{ url_for('lists.copy_suggested', list_id=lst.id) }}" method="post">
+            <button type="submit" class="btn lk-btn-blush btn-sm w-100">
+              <i class="bi bi-files me-1"></i>Usar esta lista
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+</div>
+
+<!-- Play modal -->
+{% if user_lists %}
+<div class="modal fade" id="playModal" tabindex="-1" aria-labelledby="playModalLabel">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content lk-modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold" id="playModalLabel">¿Qué lista practicamos hoy?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-3">
+        <div class="d-flex flex-column gap-2">
+          {% for lst in user_lists %}
+          {% if lst.word_count >= 2 %}
+          <a href="{{ url_for('quiz.quiz', list_id=lst.id) }}"
+             class="lk-modal-list-btn d-flex align-items-center justify-content-between text-decoration-none">
+            <div>
+              <span class="fw-semibold">{{ lst.name }}</span>
+              {% if lst.is_fully_mastered %}
+              <span class="badge-mastered ms-2" style="font-size:.65rem;">&#10003; Dominada</span>
+              {% endif %}
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <small class="text-muted">{{ lst.word_count }} palabras</small>
+              <i class="bi bi-chevron-right text-muted small"></i>
+            </div>
+          </a>
+          {% else %}
+          <div class="lk-modal-list-btn lk-modal-list-btn--disabled d-flex align-items-center justify-content-between">
+            <span class="text-muted">{{ lst.name }}</span>
+            <small class="text-muted">Añade al menos 2 palabras</small>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

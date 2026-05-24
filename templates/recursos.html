@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+{% block title %}Biblioteca — Lexi-Koh{% endblock %}
+
+{% block content %}
+
+<!-- Page header -->
+<section class="lk-recursos-hero">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <p class="text-uppercase fw-semibold small mb-2" style="color:#9B7DD4; letter-spacing:.08em;">
+          Colecciones bibliográficas
+        </p>
+        <h1 class="fw-black mb-1" style="font-size:clamp(1.7rem,4vw,2.4rem); letter-spacing:-.5px;">
+          Biblioteca
+        </h1>
+        <p class="text-muted mb-0" style="max-width:560px;">
+          Cada colección es como tu tarjetero bibliográfico. Guarda aquí el contenido que necesitas recordar de un tema, enlaces, videos, sitios. Toma nota y jamás olvides. Ordena tu bibliografía por tema, si la información está relacionada, será más fácil para tu mente recordarlo.
+        </p>
+      </div>
+      <button class="btn lk-btn-primary" data-bs-toggle="modal" data-bs-target="#newCollectionModal">
+        <i class="bi bi-plus-lg me-1"></i>Nueva colección
+      </button>
+    </div>
+  </div>
+</section>
+
+<div class="container py-5">
+
+  {% if collections %}
+  <div class="d-flex flex-column gap-3" id="collections-list">
+    {% for col in collections %}
+    <div class="lk-col-card" id="col-{{ col.id }}">
+
+      <!-- Header -->
+      <div class="lk-col-header"
+           data-bs-toggle="collapse"
+           data-bs-target="#body-{{ col.id }}"
+           role="button"
+           aria-expanded="false"
+           aria-controls="body-{{ col.id }}">
+        <i class="bi bi-chevron-right lk-col-chevron"></i>
+        <div class="flex-grow-1" style="min-width:0;">
+          <span class="fw-bold">{{ col.title }}</span>
+          {% if col.description %}
+          <p class="text-muted mb-0 mt-1" style="font-size:.82rem; line-height:1.4;">{{ col.description }}</p>
+          {% endif %}
+        </div>
+        <span class="lk-col-count">
+          {{ col.link_count }} {{ 'enlace' if col.link_count == 1 else 'enlaces' }}
+        </span>
+        <button class="btn lk-btn-icon flex-shrink-0"
+                onclick="event.stopPropagation(); openEditCollection({{ col.id }}, {{ col.title|tojson }}, {{ col.description|tojson }})"
+                title="Editar colección">
+          <i class="bi bi-pencil" style="font-size:.76rem;"></i>
+        </button>
+        <form action="{{ url_for('recursos.delete_collection', col_id=col.id) }}" method="post"
+              class="flex-shrink-0" onclick="event.stopPropagation()">
+          <button type="submit" class="btn lk-btn-icon lk-btn-danger-icon"
+                  onclick="return confirm('¿Eliminar «{{ col.title }}» y todos sus enlaces?')"
+                  title="Eliminar colección">
+            <i class="bi bi-trash3" style="font-size:.76rem;"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- Collapsible body -->
+      <div class="collapse lk-col-body" id="body-{{ col.id }}">
+
+        {% if col.links %}
+        <div class="lk-col-links">
+          {% for link in col.links %}
+          <div class="lk-col-link-row" id="link-row-{{ link.id }}">
+
+            <!-- View row -->
+            <div class="lk-link-view d-flex align-items-center gap-2 w-100">
+              <i class="bi bi-link-45deg lk-link-icon flex-shrink-0"></i>
+              <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
+                 class="lk-link-anchor flex-grow-1">
+                {{ link.title }}<i class="bi bi-box-arrow-up-right ms-1" style="font-size:.66rem; opacity:.55;"></i>
+              </a>
+              <button class="btn lk-btn-icon flex-shrink-0"
+                      onclick="toggleLinkEdit({{ link.id }})" title="Editar enlace">
+                <i class="bi bi-pencil" style="font-size:.74rem;"></i>
+              </button>
+              <form action="{{ url_for('recursos.delete_link', link_id=link.id) }}" method="post" class="flex-shrink-0">
+                <button type="submit" class="btn lk-btn-icon lk-btn-danger-icon" title="Eliminar enlace">
+                  <i class="bi bi-trash3" style="font-size:.74rem;"></i>
+                </button>
+              </form>
+            </div>
+
+            <!-- Edit row (hidden) -->
+            <div class="lk-link-edit d-none" id="link-edit-{{ link.id }}">
+              <form action="{{ url_for('recursos.edit_link', link_id=link.id) }}" method="post">
+                <div class="d-flex gap-2 flex-wrap align-items-center mt-1">
+                  <input type="text" name="title" value="{{ link.title }}"
+                         class="form-control lk-input form-control-sm lk-link-input-title"
+                         placeholder="Título" required>
+                  <input type="url" name="url" value="{{ link.url }}"
+                         class="form-control lk-input form-control-sm lk-link-input-url"
+                         placeholder="URL" required>
+                  <div class="d-flex gap-1 flex-shrink-0">
+                    <button type="submit" class="btn lk-btn-pistachio btn-sm">Guardar</button>
+                    <button type="button" class="btn lk-btn-ghost btn-sm px-2"
+                            onclick="toggleLinkEdit({{ link.id }})">✕</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted small px-4 pt-3 pb-1 mb-0" style="font-size:.83rem;">
+          Esta colección todavía no tiene enlaces. Añade el primero abajo.
+        </p>
+        {% endif %}
+
+        <!-- Add link row -->
+        <div class="lk-col-add-link">
+          <button class="btn lk-btn-add-link" onclick="toggleAddLink({{ col.id }})">
+            <i class="bi bi-plus-lg me-1"></i>Añadir enlace
+          </button>
+          <div id="add-link-{{ col.id }}" class="d-none mt-2">
+            <form action="{{ url_for('recursos.add_link', col_id=col.id) }}" method="post">
+              <div class="d-flex gap-2 flex-wrap align-items-center">
+                <input type="text" name="title" class="form-control lk-input form-control-sm lk-link-input-title"
+                       placeholder="Título del enlace" required>
+                <input type="url" name="url" class="form-control lk-input form-control-sm lk-link-input-url"
+                       placeholder="https://…" required>
+                <div class="d-flex gap-1 flex-shrink-0">
+                  <button type="submit" class="btn lk-btn-pistachio btn-sm">Guardar</button>
+                  <button type="button" class="btn lk-btn-ghost btn-sm px-2"
+                          onclick="toggleAddLink({{ col.id }})">✕</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+      </div><!-- /collapse -->
+    </div><!-- /lk-col-card -->
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <!-- Empty state -->
+  <div class="lk-col-empty text-center py-5 mx-auto" style="max-width:400px;">
+    <div style="margin-bottom:.75rem;">
+      <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="56" height="56" rx="16" fill="rgba(201,184,240,.15)"/>
+        <rect x="13" y="17" width="9" height="24" rx="2.5" fill="#C9B8F0"/>
+        <rect x="24" y="13" width="9" height="28" rx="2.5" fill="#9B7DD4"/>
+        <rect x="35" y="19" width="9" height="22" rx="2.5" fill="#B8EDD4"/>
+      </svg>
+    </div>
+    <h5 class="fw-bold mb-2">Sin colecciones todavía</h5>
+    <p class="text-muted small mb-4">
+      Organiza tus recursos de aprendizaje en colecciones — videos, podcasts, artículos, cualquier enlace que quieras recordar.
+    </p>
+    <button class="btn lk-btn-primary" data-bs-toggle="modal" data-bs-target="#newCollectionModal">
+      <i class="bi bi-plus-lg me-1"></i>Crear primera colección
+    </button>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- ── Modals ─────────────────────────────────────────────── -->
+
+<!-- New collection -->
+<div class="modal fade" id="newCollectionModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content lk-modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Nueva colección</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-3">
+        <form action="{{ url_for('recursos.create_collection') }}" method="post">
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">
+              Título <span class="text-danger">*</span>
+            </label>
+            <input type="text" name="title" class="form-control lk-input"
+                   placeholder="Ej: Weather, Kitchen, Podcasts…" required maxlength="200"
+                   autofocus>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold small">
+              Descripción <span class="text-muted fw-normal">(opcional)</span>
+            </label>
+            <input type="text" name="description" class="form-control lk-input"
+                   placeholder="¿De qué trata esta colección?" maxlength="500">
+          </div>
+          <button type="submit" class="btn lk-btn-primary w-100">
+            <i class="bi bi-plus-lg me-1"></i>Crear colección
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit collection -->
+<div class="modal fade" id="editCollectionModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content lk-modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Editar colección</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-3">
+        <form id="editColForm" method="post">
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">
+              Título <span class="text-danger">*</span>
+            </label>
+            <input type="text" name="title" id="editColTitle" class="form-control lk-input"
+                   required maxlength="200">
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold small">
+              Descripción <span class="text-muted fw-normal">(opcional)</span>
+            </label>
+            <input type="text" name="description" id="editColDesc" class="form-control lk-input"
+                   maxlength="500">
+          </div>
+          <button type="submit" class="btn lk-btn-primary w-100">Guardar cambios</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Chevron rotation via Bootstrap collapse events
+document.querySelectorAll('.lk-col-body').forEach(function(body) {
+  var card = body.closest('.lk-col-card');
+  body.addEventListener('show.bs.collapse', function() { card.classList.add('open'); });
+  body.addEventListener('hide.bs.collapse', function() { card.classList.remove('open'); });
+});
+
+// Auto-expand the collection referenced in the URL fragment
+(function() {
+  var hash = window.location.hash;
+  if (hash && hash.startsWith('#col-')) {
+    var colId = hash.slice(5);
+    var body = document.getElementById('body-' + colId);
+    if (body) {
+      bootstrap.Collapse.getOrCreateInstance(body).show();
+      setTimeout(function() {
+        var card = document.getElementById('col-' + colId);
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 320);
+    }
+  }
+})();
+
+// Toggle inline link edit form
+function toggleLinkEdit(linkId) {
+  var view = document.querySelector('#link-row-' + linkId + ' .lk-link-view');
+  var edit = document.getElementById('link-edit-' + linkId);
+  view.classList.toggle('d-none');
+  edit.classList.toggle('d-none');
+  if (!edit.classList.contains('d-none')) {
+    edit.querySelector('input').focus();
+  }
+}
+
+// Toggle add-link form inside a collection
+function toggleAddLink(colId) {
+  var form = document.getElementById('add-link-' + colId);
+  form.classList.toggle('d-none');
+  if (!form.classList.contains('d-none')) {
+    form.querySelector('input').focus();
+  }
+}
+
+// Populate and open the edit-collection modal
+function openEditCollection(id, title, desc) {
+  document.getElementById('editColForm').action = '/recursos/collections/' + id + '/edit';
+  document.getElementById('editColTitle').value = title;
+  document.getElementById('editColDesc').value = desc || '';
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('editCollectionModal')).show();
+}
+</script>
+{% endblock %}

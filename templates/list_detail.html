@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+{% block title %}{{ semantic_list.name }} — Lexi-Koh{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+  <!-- Page header -->
+  <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+      <a href="{{ url_for('home.index') }}"
+         class="text-muted small text-decoration-none d-inline-flex align-items-center gap-1 mb-1">
+        <i class="bi bi-arrow-left"></i> Inicio
+      </a>
+      <h2 class="fw-bold mb-0">{{ semantic_list.name }}</h2>
+      {% if semantic_list.description %}
+      <p class="text-muted mb-0">{{ semantic_list.description }}</p>
+      {% endif %}
+    </div>
+
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+      {% if semantic_list.is_fully_mastered %}
+      <span class="badge-mastered lk-celebrate">&#10003; Dominada</span>
+      {% endif %}
+      {% if semantic_list.word_count >= 2 %}
+      <a href="{{ url_for('quiz.quiz', list_id=semantic_list.id) }}" class="btn lk-btn-primary">
+        <i class="bi bi-play-fill me-1"></i>Practicar
+      </a>
+      {% endif %}
+      {% if not semantic_list.is_suggested %}
+      <form action="{{ url_for('lists.delete_list', list_id=semantic_list.id) }}" method="post"
+            onsubmit="return confirm('¿Eliminar esta lista y todas sus palabras?')">
+        <button type="submit" class="btn btn-sm btn-outline-danger lk-btn-outline-danger">
+          <i class="bi bi-trash"></i>
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Mastered celebration banner -->
+  {% if semantic_list.is_fully_mastered %}
+  <div class="lk-mastered-banner lk-celebrate mb-4">
+    <div class="fs-1">&#127881;</div>
+    <h5 class="fw-bold mt-2 mb-1">&#161;Lista dominada!</h5>
+    <p class="text-muted small mb-0">
+      Has respondido correctamente 3 veces consecutivas cada palabra. &#161;Eres un crack!
+    </p>
+  </div>
+  {% endif %}
+
+  <!-- Progress card -->
+  {% if semantic_list.words %}
+  <div class="lk-card p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <span class="fw-semibold small">Progreso general</span>
+      <span class="fw-semibold small" style="color:#7C5CBF;">
+        {{ semantic_list.mastered_count }} / {{ semantic_list.word_count }} dominadas
+        ({{ semantic_list.progress_percentage }}%)
+      </span>
+    </div>
+    <div class="lk-progress">
+      <div class="lk-progress-bar" style="width:{{ semantic_list.progress_percentage }}%"></div>
+    </div>
+    {% if semantic_list.word_count < 2 %}
+    <p class="text-muted small mt-2 mb-0">
+      <i class="bi bi-info-circle me-1"></i>
+      Añade al menos 2 palabras para poder practicar.
+    </p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="row g-4">
+
+    <!-- Word list -->
+    <div class="col-lg-8">
+      <h5 class="fw-bold mb-3">
+        Palabras
+        <span class="text-muted fw-normal">({{ semantic_list.word_count }})</span>
+      </h5>
+
+      {% if semantic_list.words %}
+      <div id="wordList">
+        {% for word in semantic_list.words %}
+        <div class="lk-word-card" id="word-{{ word.id }}">
+
+          <!-- Display mode -->
+          <div class="word-display">
+            <div class="d-flex align-items-start justify-content-between gap-2">
+              <div class="flex-grow-1 min-w-0">
+                <!-- Word pair -->
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                  <span class="fw-bold">{{ word.english }}</span>
+                  <i class="bi bi-arrow-right text-muted small"></i>
+                  <span class="text-muted">{{ word.spanish }}</span>
+
+                  <!-- Streak badge -->
+                  {% if word.progress and word.progress.is_mastered %}
+                  <span class="badge-mastered" style="font-size:.65rem;">&#10003;</span>
+                  {% elif word.progress and word.progress.total_attempts > 0 %}
+                  <span class="lk-streak-badge">
+                    {{ word.progress.correct_streak }}/3
+                  </span>
+                  {% endif %}
+                </div>
+
+                <!-- Context note toggle -->
+                {% if word.context_note %}
+                <button class="btn btn-link btn-sm p-0 lk-note-toggle"
+                        onclick="toggleNote(event, {{ word.id }})">
+                  <i class="bi bi-chat-quote me-1"></i>Ver nota de contexto
+                </button>
+                <div class="lk-context-note" id="note-{{ word.id }}">
+                  {{ word.context_note }}
+                </div>
+                {% endif %}
+              </div>
+
+              <!-- Actions -->
+              <div class="d-flex gap-1 flex-shrink-0">
+                <a href="{{ word.reverso_url }}" target="_blank" rel="noopener"
+                   class="btn btn-sm lk-btn-icon" title="Ver en contexto — Reverso">
+                  <i class="bi bi-box-arrow-up-right"></i>
+                </a>
+                <button class="btn btn-sm lk-btn-sky lk-btn-icon"
+                        onclick="startEdit({{ word.id }})" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <form action="{{ url_for('lists.delete_word', list_id=semantic_list.id, word_id=word.id) }}"
+                      method="post" class="d-inline"
+                      onsubmit="return confirm('&#191;Eliminar esta palabra?')">
+                  <button type="submit" class="btn btn-sm lk-btn-icon lk-btn-danger-icon" title="Eliminar">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Edit mode (hidden by default) -->
+          <div class="word-edit d-none">
+            <div class="row g-2 mb-2">
+              <div class="col-sm-4">
+                <label class="form-label small fw-semibold mb-1">Inglés</label>
+                <input type="text" class="form-control form-control-sm lk-input edit-english"
+                       value="{{ word.english }}" placeholder="Inglés">
+              </div>
+              <div class="col-sm-4">
+                <label class="form-label small fw-semibold mb-1">Español</label>
+                <input type="text" class="form-control form-control-sm lk-input edit-spanish"
+                       value="{{ word.spanish }}" placeholder="Español">
+              </div>
+              <div class="col-sm-4">
+                <label class="form-label small fw-semibold mb-1">Nota (opcional)</label>
+                <input type="text" class="form-control form-control-sm lk-input edit-note"
+                       value="{{ word.context_note or '' }}" placeholder="Nota de contexto">
+              </div>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn lk-btn-pistachio btn-sm"
+                      onclick="saveWord({{ word.id }}, {{ semantic_list.id }})">
+                <i class="bi bi-check-lg me-1"></i>Guardar
+              </button>
+              <button class="btn btn-outline-secondary btn-sm lk-btn-outline"
+                      onclick="cancelEdit({{ word.id }})">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% else %}
+      <div class="text-center py-5">
+        <div style="font-size:3rem;">&#128218;</div>
+        <p class="text-muted mt-3">Esta lista está vacía. Añade tu primera palabra a la derecha.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Add word sidebar -->
+    <div class="col-lg-4">
+      <div class="lk-card p-4" style="position:sticky;top:80px;">
+        <h6 class="fw-bold mb-3">
+          <i class="bi bi-plus-circle me-1" style="color:#9B7DD4;"></i>Añadir palabra
+        </h6>
+        <form action="{{ url_for('lists.add_word', list_id=semantic_list.id) }}" method="post">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Inglés <span class="text-danger">*</span></label>
+            <input type="text" name="english" class="form-control lk-input"
+                   placeholder="Ej: cook" required maxlength="200">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Español <span class="text-danger">*</span></label>
+            <input type="text" name="spanish" class="form-control lk-input"
+                   placeholder="Ej: cocinar" required maxlength="200">
+          </div>
+          <div class="mb-4">
+            <label class="form-label small fw-semibold">
+              Nota de contexto
+              <span class="text-muted fw-normal">(opcional)</span>
+            </label>
+            <input type="text" name="context_note" class="form-control lk-input"
+                   placeholder="Ej: se usa para comida caliente" maxlength="500">
+            <div class="form-text small">Se muestra expandible bajo la palabra.</div>
+          </div>
+          <button type="submit" class="btn lk-btn-primary w-100">
+            <i class="bi bi-plus-lg me-1"></i>Añadir palabra
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleNote(e, wordId) {
+  const note = document.getElementById('note-' + wordId);
+  const btn = e.currentTarget;
+  const expanded = note.classList.toggle('expanded');
+  btn.innerHTML = expanded
+    ? '<i class="bi bi-chat-quote me-1"></i>Ocultar nota'
+    : '<i class="bi bi-chat-quote me-1"></i>Ver nota de contexto';
+}
+
+function startEdit(wordId) {
+  const card = document.getElementById('word-' + wordId);
+  card.querySelector('.word-display').classList.add('d-none');
+  card.querySelector('.word-edit').classList.remove('d-none');
+  card.querySelector('.edit-english').focus();
+}
+
+function cancelEdit(wordId) {
+  const card = document.getElementById('word-' + wordId);
+  card.querySelector('.word-display').classList.remove('d-none');
+  card.querySelector('.word-edit').classList.add('d-none');
+}
+
+async function saveWord(wordId, listId) {
+  const card = document.getElementById('word-' + wordId);
+  const english = card.querySelector('.edit-english').value.trim();
+  const spanish = card.querySelector('.edit-spanish').value.trim();
+  const contextNote = card.querySelector('.edit-note').value.trim();
+
+  if (!english || !spanish) {
+    alert('Inglés y español son obligatorios.');
+    return;
+  }
+
+  try {
+    const res = await fetch('/lists/' + listId + '/words/' + wordId + '/edit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ english, spanish, context_note: contextNote })
+    });
+    const data = await res.json();
+    if (data.success) {
+      // Reload to reflect updated word and any note changes cleanly
+      location.reload();
+    } else {
+      alert('Error al guardar. Inténtalo de nuevo.');
+    }
+  } catch (err) {
+    alert('Error de conexión. Inténtalo de nuevo.');
+  }
+}
+</script>
+{% endblock %}

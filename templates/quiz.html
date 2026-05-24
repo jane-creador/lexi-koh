@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}Quiz — {{ semantic_list.name }} — Lexi-Koh{% endblock %}
+
+{% block content %}
+<div class="lk-quiz-container">
+
+  <!-- ── QUIZ SECTION ── -->
+  <div id="quizSection">
+
+    <!-- Breadcrumb -->
+    <div class="text-center mb-3">
+      <a href="{{ url_for('lists.detail', list_id=semantic_list.id) }}"
+         class="text-muted small text-decoration-none">
+        <i class="bi bi-arrow-left me-1"></i>{{ semantic_list.name }}
+      </a>
+    </div>
+
+    <!-- Progress indicator -->
+    <div class="quiz-progress-text" id="progressText">Pregunta 1 de 1</div>
+    <div class="lk-progress mb-4">
+      <div class="lk-progress-bar" id="progressBar" style="width:0%"></div>
+    </div>
+
+    <!-- Question card -->
+    <div class="lk-quiz-card">
+      <p class="text-center text-muted small mb-0">&#191;C&oacute;mo se dice en espa&ntilde;ol?</p>
+      <div class="quiz-word" id="quizWord">&hellip;</div>
+      <div id="optionsContainer"></div>
+
+      <!-- Feedback message -->
+      <div id="feedbackMsg" class="text-center fw-semibold mt-3 d-none" style="font-size:.95rem;"></div>
+
+      <button class="btn lk-btn-primary w-100 mt-4 d-none" id="nextBtn" onclick="nextQuestion()">
+        Siguiente <i class="bi bi-arrow-right ms-1"></i>
+      </button>
+    </div>
+
+    <!-- Live score counter -->
+    <div class="text-center mt-3">
+      <span class="text-muted small" id="scoreCounter">0 correctas</span>
+    </div>
+  </div>
+
+  <!-- ── RESULTS SECTION ── -->
+  <div id="resultsSection" class="d-none">
+
+    <!-- List mastered banner -->
+    <div id="listMasteredBanner" class="lk-mastered-banner lk-celebrate mb-4 d-none">
+      <div class="display-4">&#127942;</div>
+      <h4 class="fw-bold mt-2 mb-1">&#161;Lista dominada!</h4>
+      <p class="text-muted mb-0">&#161;Has dominado todas las palabras de esta lista!</p>
+    </div>
+
+    <div class="lk-results-card lk-celebrate">
+      <!-- Score circle -->
+      <div class="lk-score-circle" id="scoreCircle">0%</div>
+      <h3 class="fw-bold mb-1" id="scoreText"></h3>
+      <p class="text-muted mb-4" id="motivationalMsg"></p>
+
+      <!-- Newly mastered words -->
+      <div id="masteredSection" class="text-start mb-4 d-none">
+        <h6 class="fw-semibold mb-2" style="color:#1A4A32;">
+          <i class="bi bi-star-fill me-1" style="color:#B8EDD4;"></i>
+          Palabras dominadas en esta ronda
+        </h6>
+        <div id="masteredList" class="d-flex flex-wrap gap-2"></div>
+      </div>
+
+      <!-- Words to review -->
+      <div id="reviewSection" class="text-start mb-4 d-none">
+        <h6 class="fw-semibold mb-2" style="color:#6B1A3A;">
+          <i class="bi bi-arrow-repeat me-1" style="color:#F2B8D6;"></i>
+          Para repasar
+        </h6>
+        <div id="reviewList"></div>
+      </div>
+
+      <!-- CTAs -->
+      <div class="d-flex gap-2 justify-content-center flex-wrap">
+        <a id="ctaBtn" href="{{ url_for('quiz.quiz', list_id=semantic_list.id) }}"
+           class="btn lk-btn-primary">
+          <i class="bi bi-arrow-repeat me-1"></i>Seguir practicando
+        </a>
+        <a href="{{ url_for('home.index') }}" class="btn lk-btn-sky">
+          Inicio
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Questions data injected server-side -->
+<script id="questionsData" type="application/json">{{ questions_json | safe }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/quiz.js') }}"></script>
+<script>initQuiz({{ semantic_list.id }});</script>
+{% endblock %}
