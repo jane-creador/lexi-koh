@@ -13,10 +13,10 @@ def _ensure_sid():
 
 @home_bp.route('/')
 def index():
-    _ensure_sid()
+    sid = _ensure_sid()
     user_lists = (
         SemanticList.query
-        .filter_by(is_suggested=False)
+        .filter_by(is_suggested=False, session_id=sid)
         .order_by(SemanticList.created_at.desc())
         .all()
     )

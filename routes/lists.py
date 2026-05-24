@@ -1,7 +1,14 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+import uuid
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from models import db, SemanticList, Word, WordProgress
 
 lists_bp = Blueprint('lists', __name__)
+
+
+def _ensure_sid():
+    if 'sid' not in session:
+        session['sid'] = str(uuid.uuid4())
+    return session['sid']
 
 
 @lists_bp.route('/lists/new', methods=['GET', 'POST'])
@@ -12,7 +19,12 @@ def create_list():
         if not name:
             flash('El nombre es obligatorio.', 'danger')
             return render_template('create_list.html')
-        new_list = SemanticList(name=name, description=description, is_suggested=False)
+        new_list = SemanticList(
+            session_id=_ensure_sid(),
+            name=name,
+            description=description,
+            is_suggested=False,
+        )
         db.session.add(new_list)
         db.session.commit()
         flash('¡Lista creada con éxito!', 'success')
@@ -81,6 +93,9 @@ def delete_list(list_id):
     if semantic_list.is_suggested:
         flash('No puedes eliminar una lista sugerida.', 'danger')
         return redirect(url_for('home.index'))
+    if semantic_list.session_id != _ensure_sid():
+        flash('No tienes permiso para eliminar esta lista.', 'danger')
+        return redirect(url_for('home.index'))
     db.session.delete(semantic_list)
     db.session.commit()
     flash('Lista eliminada.', 'info')
@@ -91,9 +106,10 @@ def delete_list(list_id):
 def copy_suggested(list_id):
     suggested = SemanticList.query.filter_by(id=list_id, is_suggested=True).first_or_404()
     new_list = SemanticList(
+        session_id=_ensure_sid(),
         name=suggested.name,
         description=suggested.description,
-        is_suggested=False
+        is_suggested=False,
     )
     db.session.add(new_list)
     db.session.flush()

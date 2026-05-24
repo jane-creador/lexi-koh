@@ -9,6 +9,7 @@ class SemanticList(db.Model):
     __tablename__ = 'semantic_list'
 
     id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(100), nullable=True, index=True)
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.String(500), default='')
     is_suggested = db.Column(db.Boolean, default=False, nullable=False)

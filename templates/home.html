@@ -46,7 +46,53 @@
 
 <div class="container py-5">
 
-  <!-- Mis Listas -->
+  <!-- Listas Sugeridas — always visible to all users -->
+  <section id="sugeridas" class="mb-5">
+    <div class="d-flex align-items-center justify-content-between mb-1">
+      <h2 class="lk-section-title mb-0">Listas sugeridas</h2>
+    </div>
+    <p class="text-muted small mb-4">Copia cualquier lista a tus listas personales para editarla y practicar.</p>
+
+    {% if suggested_lists %}
+    <div class="row g-3">
+      {% for lst in suggested_lists %}
+      <div class="col-md-6 col-lg-4">
+        <div class="lk-suggested-card h-100 d-flex flex-column">
+          <div class="d-flex align-items-start justify-content-between mb-2">
+            <h6 class="fw-bold mb-0">{{ lst.name }}</h6>
+            <span class="badge rounded-pill lk-badge-count">{{ lst.word_count }}</span>
+          </div>
+          {% if lst.description %}
+          <p class="text-muted small mb-3">{{ lst.description }}</p>
+          {% endif %}
+
+          <!-- Word preview chips -->
+          <div class="mb-3 flex-grow-1">
+            {% for word in lst.words[:6] %}
+            <span class="lk-chip me-1 mb-1">{{ word.english }}</span>
+            {% endfor %}
+            {% if lst.word_count > 6 %}
+            <span class="text-muted small">+{{ lst.word_count - 6 }} más</span>
+            {% endif %}
+          </div>
+
+          <form action="{{ url_for('lists.copy_suggested', list_id=lst.id) }}" method="post">
+            <button type="submit" class="btn lk-btn-blush btn-sm w-100">
+              <i class="bi bi-files me-1"></i>Usar esta lista
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted small fst-italic">Las listas sugeridas aparecerán aquí una vez que el servidor las cargue.</p>
+    {% endif %}
+  </section>
+
+  <hr class="mb-5" style="border-color:rgba(201,184,240,.2);">
+
+  <!-- Mis Listas — session-scoped personal lists -->
   <section class="mb-5">
     <div class="d-flex align-items-center justify-content-between mb-4">
       <h2 class="lk-section-title mb-0">Mis listas</h2>
@@ -106,54 +152,13 @@
     <div class="lk-empty-state text-center py-5">
       <div class="lk-empty-icon mb-3">&#128196;</div>
       <h5 class="text-muted">Aún no tienes listas propias</h5>
-      <p class="text-muted small mb-4">Crea una lista o copia una de las sugeridas para empezar a practicar.</p>
+      <p class="text-muted small mb-4">Crea una lista desde cero o copia una de las sugeridas de arriba.</p>
       <a href="{{ url_for('lists.create_list') }}" class="btn lk-btn-primary">
         <i class="bi bi-plus-lg me-1"></i>Crear lista
       </a>
     </div>
     {% endif %}
   </section>
-
-  <!-- Listas Sugeridas -->
-  {% if suggested_lists %}
-  <section id="sugeridas">
-    <div class="mb-4">
-      <h2 class="lk-section-title mb-1">Listas sugeridas</h2>
-      <p class="text-muted small">Copia cualquier lista a tus listas personales para editarla y practicar.</p>
-    </div>
-    <div class="row g-3">
-      {% for lst in suggested_lists %}
-      <div class="col-md-6 col-lg-4">
-        <div class="lk-suggested-card h-100 d-flex flex-column">
-          <div class="d-flex align-items-start justify-content-between mb-2">
-            <h6 class="fw-bold mb-0">{{ lst.name }}</h6>
-            <span class="badge rounded-pill lk-badge-count">{{ lst.word_count }}</span>
-          </div>
-          {% if lst.description %}
-          <p class="text-muted small mb-3">{{ lst.description }}</p>
-          {% endif %}
-
-          <!-- Word preview chips -->
-          <div class="mb-3 flex-grow-1">
-            {% for word in lst.words[:6] %}
-            <span class="lk-chip me-1 mb-1">{{ word.english }}</span>
-            {% endfor %}
-            {% if lst.word_count > 6 %}
-            <span class="text-muted small">+{{ lst.word_count - 6 }} más</span>
-            {% endif %}
-          </div>
-
-          <form action="{{ url_for('lists.copy_suggested', list_id=lst.id) }}" method="post">
-            <button type="submit" class="btn lk-btn-blush btn-sm w-100">
-              <i class="bi bi-files me-1"></i>Usar esta lista
-            </button>
-          </form>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </section>
-  {% endif %}
 
 </div>
 
