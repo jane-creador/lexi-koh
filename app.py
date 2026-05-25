@@ -44,6 +44,10 @@ def create_app():
         except Exception:
             db.session.rollback()
 
+        from seed import seed_suggested_lists
+        from models import SemanticList, Word
+        seed_suggested_lists(db, SemanticList, Word)
+
     return app
 
 

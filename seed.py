@@ -1,30 +1,24 @@
 """
-Seed the database with the 6 pre-built suggested lists.
-Run once after deploy:  python seed.py
-Railway release phase:  included in Procfile
+Seed the database with pre-built suggested lists.
+Called automatically on every app startup (idempotent via count check).
+Can also be run standalone: python seed.py
 """
 import os
 import sys
-
-# Allow running as a standalone script
-sys.path.insert(0, os.path.dirname(__file__))
-
-from app import app
-from models import db, SemanticList, Word
 
 SUGGESTED_LISTS = [
     {
         'name': 'Kitchen verbs',
         'description': 'Verbos esenciales de cocina',
         'words': [
-            ('cook',  'cocinar'),
-            ('bake',  'hornear'),
-            ('stir',  'remover'),
-            ('chop',  'picar'),
-            ('boil',  'hervir'),
-            ('fry',   'freír'),
-            ('mix',   'mezclar'),
-            ('taste', 'probar'),
+            ('cook',   'cocinar'),
+            ('bake',   'hornear'),
+            ('stir',   'remover'),
+            ('chop',   'picar'),
+            ('boil',   'hervir'),
+            ('fry',    'freír'),
+            ('mix',    'mezclar'),
+            ('taste',  'probar'),
         ],
     },
     {
@@ -100,18 +94,15 @@ SUGGESTED_LISTS = [
 ]
 
 
-def seed():
-    with app.app_context():
-        # Remove old suggested lists (re-seed is idempotent)
-        for lst in SemanticList.query.filter_by(is_suggested=True).all():
-            db.session.delete(lst)
-        db.session.commit()
-
+def seed_suggested_lists(db, SemanticList, Word):
+    """Insert suggested lists only if none exist yet (idempotent)."""
+    if SemanticList.query.filter_by(is_suggested=True).count() == 0:
         for list_data in SUGGESTED_LISTS:
             sem_list = SemanticList(
                 name=list_data['name'],
                 description=list_data['description'],
                 is_suggested=True,
+                session_id=None,
             )
             db.session.add(sem_list)
             db.session.flush()
@@ -124,8 +115,14 @@ def seed():
                 ))
 
         db.session.commit()
-        print(f"Seeded {len(SUGGESTED_LISTS)} suggested lists successfully.")
+        print(f"Seeded {len(SUGGESTED_LISTS)} suggested lists.")
+    else:
+        print("Suggested lists already present — skipping seed.")
 
 
 if __name__ == '__main__':
-    seed()
+    sys.path.insert(0, os.path.dirname(__file__))
+    from app import app
+    from models import db, SemanticList, Word
+    with app.app_context():
+        seed_suggested_lists(db, SemanticList, Word)

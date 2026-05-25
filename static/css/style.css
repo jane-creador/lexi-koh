@@ -66,34 +66,61 @@ body {
   background-clip: text;
 }
 
-/* Floating word-card decorations in the hero */
-.lk-hero-visual {
-  position: relative;
-  height: 220px;
-}
-.lk-hero-card {
-  position: absolute;
+/* ─── Hero play zone ─────────────────────────────────────── */
+.lk-play-zone {
   background: white;
+  border-radius: 24px;
+  padding: 28px 26px;
+  box-shadow: 0 8px 36px rgba(0,0,0,.09);
+  border: 1.5px solid rgba(240,180,41,.22);
+}
+
+.lk-play-zone-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #F0B429;
+  color: white;
+  font-size: .9rem;
+  flex-shrink: 0;
+  box-shadow: 0 3px 12px rgba(240,180,41,.38);
+}
+
+.lk-quiz-pick {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 15px;
   border-radius: 14px;
-  padding: 12px 20px;
-  font-size: .95rem;
-  box-shadow: var(--shadow-md);
-  white-space: nowrap;
+  background: var(--gray-light);
+  border: 1.5px solid transparent;
+  text-decoration: none;
+  color: var(--text-dark);
+  transition: border-color .16s ease, box-shadow .16s ease,
+              transform .16s ease, background .16s ease;
 }
-.lk-hero-card--1 {
-  top: 10px; left: 50%;
-  transform: translateX(-50%) rotate(-3deg);
-  border-left: 4px solid var(--lilac);
+.lk-quiz-pick:hover {
+  border-color: #F0B429;
+  box-shadow: 0 4px 16px rgba(240,180,41,.22);
+  transform: translateX(3px);
+  background: white;
+  color: var(--text-dark);
 }
-.lk-hero-card--2 {
-  top: 80px; left: 30%;
-  transform: translateX(-50%) rotate(2deg);
-  border-left: 4px solid var(--blush);
-}
-.lk-hero-card--3 {
-  top: 150px; left: 65%;
-  transform: translateX(-50%) rotate(-1deg);
-  border-left: 4px solid var(--pistachio);
+
+.lk-quiz-pick-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: rgba(240,180,41,.14);
+  color: #B87800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .88rem;
+  flex-shrink: 0;
 }
 
 /* ─── Buttons ────────────────────────────────────────────── */
@@ -130,6 +157,7 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 8px 26px rgba(124,92,191,.45);
 }
+
 
 .lk-btn-ghost {
   background: transparent;
@@ -641,8 +669,7 @@ body {
 /* ─── Responsive ─────────────────────────────────────────── */
 @media (max-width: 576px) {
   .lk-hero { padding: 50px 0 40px; }
-  .lk-hero-visual { height: 160px; }
-  .lk-hero-card { font-size: .82rem; padding: 9px 14px; }
+  .lk-play-zone { padding: 20px 18px; }
   .lk-quiz-card { padding: 24px 16px; }
   .quiz-word { font-size: 1.7rem; }
   .lk-results-card { padding: 28px 16px; }
