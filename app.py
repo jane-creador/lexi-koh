@@ -46,6 +46,16 @@ def create_app():
 
         from seed import seed_suggested_lists
         from models import SemanticList, Word
+
+        # Remove duplicate suggested lists, keeping the lowest-id copy of each name.
+        seen = {}
+        for lst in SemanticList.query.filter_by(is_suggested=True).order_by(SemanticList.id).all():
+            if lst.name in seen:
+                db.session.delete(lst)
+            else:
+                seen[lst.name] = lst.id
+        db.session.commit()
+
         seed_suggested_lists(db, SemanticList, Word)
 
     return app
