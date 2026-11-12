@@ -13,8 +13,11 @@ def create_app():
     app = Flask(__name__)
 
     database_url = os.environ.get('DATABASE_URL', 'sqlite:///lexikoh.db')
-    if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    # Force the psycopg2 driver (the one in requirements.txt)
+    for prefix in ('postgres://', 'postgresql://', 'postgresql+psycopg://'):
+        if database_url.startswith(prefix):
+            database_url = 'postgresql+psycopg2://' + database_url[len(prefix):]
+            break
 
     app.config.update(
         SQLALCHEMY_DATABASE_URI=database_url,
